@@ -36,9 +36,15 @@ def plot_time_series(time_series, start_time, end_time, highlight_time):
     """
     time_series_trunc = time_series.truncate(start_time, end_time)
     if time_series_trunc:
-        time_series_trunc.peek()
-        plt.axvline(highlight_time, color='steelblue', linewidth=1.5, label="t={}".format(highlight_time))
-        plt.legend()
+        fig, ax = plt.subplots()
+
+        # Plot the time series manually
+        time_series.plot()
+        
+        ax.axvline(highlight_time, color='steelblue', linewidth=1.5, label="t={}".format(highlight_time))
+        ax.legend()
+        
+        plt.tight_layout()
         plt.show()
     else:
         print("No data available for the specified time range.")
