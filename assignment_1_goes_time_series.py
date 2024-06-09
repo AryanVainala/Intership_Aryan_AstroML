@@ -59,6 +59,7 @@ def plot_time_series(time_series, start_time, end_time, highlight_time):
     time_series_trunc.plot(axes=ax)
     ax.axvline(highlight_time, color='steelblue', linewidth=1.5, label="t={}".format(highlight_time))
     ax.legend()
+    ax.set_title("GOES X-Ray Flux")
     #Here was the problem so when we used "plt.legend()" it was too ambiguous and so it applied the legend
     #to both sets of axes instead of just one so we needed to use "ax.legend()"
     plt.show()
@@ -67,8 +68,8 @@ def plot_time_series(time_series, start_time, end_time, highlight_time):
 def main():
     print("You can enter a date or timestamp in various formats such as:")
     print("-----------------------------------------------------")
-    print("- YYYY-MM-DDThh::mm:ssZ")
-    print("- YYYY-MM-DD hh::mm:ss")
+    print("- YYYY-MM-DDThh:mm:ssZ")
+    print("- YYYY-MM-DD hh:mm:ss")
     print("- YYYY-MM-DD")
     print("- DD-MM-YYYY")
     print("- MM/DD/YYYY")
