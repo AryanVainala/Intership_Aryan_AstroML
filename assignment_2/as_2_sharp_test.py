@@ -1,5 +1,5 @@
 import sunpy.map as map
-from sunpy.net import Fido, Scraper, attrs as a
+from sunpy.net import Fido, attrs as a
 import matplotlib.pyplot as plt
 import astropy.units as u
 from datetime import datetime, timedelta
@@ -7,6 +7,8 @@ from astropy.io import fits
 from astropy.wcs import WCS
 import numpy as np
 import sunpy.timeseries as ts
+from sunkit_instruments import goes_xrs
+from sunpy.time import TimeRange
 
 def get_time_and_window():
     """
@@ -100,17 +102,16 @@ def plot_goes_time_series(time_series, start_time, end_time, highlight_time):
     ax.set_title("GOES X-Ray Flux")
     plt.show()
 
-def fetch_harpnums(start_time, end_time):
+def fetch_harpnums(timestamp):
     """
-    Fetch available HARPNUMs for the given time interval.
+    Fetch available HARPNUMs for the given timestamp.
     """
-    print(f"Fetching available HARPNUMs from {start_time} to {end_time}...")
-    search_result = Fido.search(a.Time(start_time, end_time),
+    print(f"Fetching available HARPNUMs for {timestamp}...")
+    search_result = Fido.search(a.Time(timestamp, timestamp),
                                 a.jsoc.Series("hmi.sharp_720s"))
     harpnums = {record["HARPNUM"] for record in search_result[0]}
     print("Available HARPNUMs:", sorted(harpnums))
     return sorted(harpnums)
-
 
 def select_harpnum(available_harpnums):
     """
@@ -130,23 +131,23 @@ def select_harpnum(available_harpnums):
             print(f"Invalid input. Please enter a valid HARPNUM from the available options: {available_harpnums}")
 
 def fetch_aarp_data(filepath):
-    #Temporary manual dowload of AARP data
+    # Temporary manual download of AARP data
     return None
 
-def fetch_sharp_data(start_time, end_time, harpnum=None):
+def fetch_sharp_data(timestamp, harpnum=None):
     """
     Fetch SHARP data from JSOC.
     """
     jsoc_email = str(input("Please enter an email registered with JSOC: "))
     if harpnum:
-        sharp_result = Fido.search(a.Time(start_time, end_time),
+        sharp_result = Fido.search(a.Time(timestamp, timestamp),
                                    a.Sample(1*u.hour),
                                    a.jsoc.Series("hmi.sharp_cea_720s"),
                                    a.jsoc.PrimeKey("HARPNUM", harpnum),
                                    a.jsoc.Notify(jsoc_email),
                                    a.jsoc.Segment('magnetogram'))
     else:
-        sharp_result = Fido.search(a.Time(start_time, end_time),
+        sharp_result = Fido.search(a.Time(timestamp, timestamp),
                                    a.Sample(1*u.hour),
                                    a.jsoc.Series("hmi.sharp_cea_720s"),
                                    a.jsoc.Notify(jsoc_email),
@@ -154,6 +155,7 @@ def fetch_sharp_data(start_time, end_time, harpnum=None):
     files = Fido.fetch(sharp_result)
     sharp_maps = map.Map(files)
     return sharp_maps
+
 
 def fix_metadata(sharp_maps):
     """
@@ -168,24 +170,20 @@ def fix_metadata(sharp_maps):
             sharp_maps.meta["bunit"] = r"Mx cm$^{-2}$"
     return sharp_maps
 
-
 def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, start_time, end_time, highlight_time):
-    """
-    Plot SHARP, AARP, and GOES data side by side to ensure alignment.
-    """
     fig = plt.figure(figsize=(15, 10))
     
     # Plot SHARP data with its WCS projection
     ax1 = fig.add_subplot(221, projection=sharp_map)
-    im1 = ax1.imshow(sharp_map.data, cmap='inferno', origin='lower')
+    im1 = ax1.imshow(sharp_map.data, cmap='afmhot', origin='lower')
     harpnum = sharp_map.meta.get('HARPNUM')
     sharp_time = sharp_map.date
     sharp_unit = sharp_map.meta.get('bunit', 'Unknown')
     sharp_x_unit = sharp_map.meta.get('cunit1', 'degree')
     sharp_y_unit = sharp_map.meta.get('cunit2', 'degree')
     ax1.set_title(f"SHARP - {harpnum} at {sharp_time}")
-    ax1.set_xlabel(f"CEA Latitude ({sharp_x_unit})")
-    ax1.set_ylabel(f"CEA Longitude ({sharp_y_unit})")
+    ax1.set_xlabel(f"CEA Longitude ({sharp_x_unit})")
+    ax1.set_ylabel(f"CEA Latitude ({sharp_y_unit})")
     cb1 = plt.colorbar(im1, ax=ax1, label=sharp_unit)
     
     # Plot AARP data with adjusted vmin and vmax
@@ -199,16 +197,16 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, start_time, end_time,
 
             # Extract WCS information from the header
             wcs = WCS(ext.header, naxis=2)
-
             ax = fig.add_subplot(2, 2, i+2, projection=wcs)
             
+            # Calculate vmin and vmax for better dynamic range
             vmin = np.percentile(data, 1)
             vmax = np.percentile(data, 99.5)
-            
+
             im = ax.imshow(data, cmap='afmhot', origin='lower', aspect='auto', vmin=vmin, vmax=vmax)
             aarp_x_unit = ext.header.get('CUNIT1', 'Unknown')
             aarp_y_unit = ext.header.get('CUNIT2', 'Unknown')
-            unit = ext.header.get('BUNIT', 'Unknown')  # Get unit from header if available
+            unit = ext.header.get('BUNIT', 'Intensity')  # Get unit for colorbar from header if available
             ax.coords[0].set_axislabel(f'Solar X ({aarp_x_unit})')
             ax.coords[1].set_axislabel(f'Solar Y ({aarp_y_unit})')
             ax.set_title(f'AARP - {wavelength} Å at {specific_time}')
@@ -229,12 +227,12 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, start_time, end_time,
 def main():
     timestamp, time_window_minutes = get_time_and_window()
     start_time, end_time = get_time_window(timestamp, time_window_minutes)
-    available_harpnums = fetch_harpnums(start_time, end_time)
+    available_harpnums = fetch_harpnums(timestamp)
     harpnum = select_harpnum(available_harpnums)
 
     try:
-        print(f"Fetching SHARP data from {start_time} to {end_time}...")
-        sharp_maps = fetch_sharp_data(start_time.isoformat(), end_time.isoformat(), harpnum)
+        print(f"Fetching SHARP data for {timestamp}...")
+        sharp_maps = fetch_sharp_data(timestamp, harpnum)
         sharp_maps = fix_metadata(sharp_maps)
         print("SHARP data fetched successfully. Plotting the data...")
 
@@ -243,8 +241,8 @@ def main():
         print("GOES data fetched successfully. Plotting the data...")
 
         aarp_filepaths = [
-            r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_171.fits",
-            r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_304.fits"
+            r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\assignment_2\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_171.fits",
+            r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\assignment_2\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_304.fits"
         ]
 
         plot_combined_data(sharp_maps, aarp_filepaths, goes_ts, start_time, end_time, timestamp)
@@ -256,4 +254,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
