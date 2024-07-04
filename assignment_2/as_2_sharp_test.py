@@ -89,18 +89,6 @@ def fetch_goes_data(start_time, end_time):
     except:
         raise RuntimeError("Failed to fetch GOES data or data does not exist.")
 
-def plot_goes_time_series(time_series, start_time, end_time, highlight_time):
-    """
-    Plot the GOES time series data within the specified time range. Then highlight
-    the timestamp.
-    """
-    time_series_trunc = time_series.truncate(start_time, end_time)
-    fig, ax = plt.subplots()
-    time_series_trunc.plot(axes=ax)
-    ax.axvline(highlight_time, color='steelblue', linewidth=1.5, label="t={}".format(highlight_time))
-    ax.legend()
-    ax.set_title("GOES X-Ray Flux")
-    plt.show()
 
 def fetch_harpnums(timestamp):
     """
