@@ -1,6 +1,6 @@
 import sunpy.map as map
 from sunpy.net import Fido, attrs as a
-import matplotlib.pyplot as plt
+import matplotlib, matplotlib.pyplot as plt
 import astropy.units as u
 from datetime import datetime, timedelta
 from astropy.io import fits
@@ -10,6 +10,7 @@ import sunpy.timeseries as ts
 from sunkit_instruments import goes_xrs
 from sunpy.time import TimeRange
 import pandas as pd
+import sunpy.visualization.colormaps as cm
 
 
 def get_time_and_window():
@@ -198,7 +199,7 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, start_time, end_time,
     ax1.set_title(f"SHARP - {harpnum} at {sharp_time} | AR flared - {flared}")
     ax1.set_xlabel(f"CEA Longitude ({sharp_x_unit})")
     ax1.set_ylabel(f"CEA Latitude ({sharp_y_unit})")
-    cb1 = plt.colorbar(im1, ax=ax1, label=sharp_unit)
+    plt.colorbar(im1, ax=ax1, label=sharp_unit)
     
     # Plot AARP data with adjusted vmin and vmax
     for i, filepath in enumerate(aarp_filepaths):
@@ -206,7 +207,8 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, start_time, end_time,
             ext = hdul[1]
             time_key = f"T_IMG05"
             specific_time = ext.header.get(time_key, 'Unknown')
-            wavelength = ext.header.get('WAVELNTH', 'Unknown')
+            aarp_wavelength = ext.header.get('WAVELNTH', 'Unknown')
+            aarp_colormap = matplotlib.colormaps[f'sdoaia{aarp_wavelength}']
             data = ext.data[5, :, :]
 
             # Extract WCS information from the header
@@ -217,13 +219,13 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, start_time, end_time,
             vmin = np.percentile(data, 1)
             vmax = np.percentile(data, 99.5)
 
-            im = ax.imshow(data, cmap='afmhot', origin='lower', aspect='auto', vmin=vmin, vmax=vmax)
+            im = ax.imshow(data, cmap=aarp_colormap, origin='lower', aspect='auto', vmin=vmin, vmax=vmax)
             aarp_x_unit = ext.header.get('CUNIT1', 'Unknown')
             aarp_y_unit = ext.header.get('CUNIT2', 'Unknown')
             unit = ext.header.get('BUNIT', 'Intensity')  # Get unit for colorbar from header if available
             ax.coords[0].set_axislabel(f'Solar X ({aarp_x_unit})')
             ax.coords[1].set_axislabel(f'Solar Y ({aarp_y_unit})')
-            ax.set_title(f'AARP - {wavelength} Å at {specific_time}')
+            ax.set_title(f'AARP - {aarp_wavelength} Å at {specific_time}')
             plt.colorbar(im, ax=ax, label=unit)
     
     # Plot GOES data in the 2x2 grid
