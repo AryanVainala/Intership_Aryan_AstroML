@@ -85,7 +85,8 @@ def fetch_goes_data(start_time, end_time):
     Fetch GOES satellite data using the specified time range.
     """
     try:
-        result = Fido.search(a.Time(start_time, end_time), a.Instrument("XRS"))
+        result = Fido.search(a.Time(start_time, end_time), a.Instrument("XRS"),
+                             a.goes.SatelliteNumber(15), a.Resolution("flx1s"))
         files = Fido.fetch(result)
         combined_ts = ts.TimeSeries(files, source='XRS', concatenate=True)
         return combined_ts
@@ -98,6 +99,14 @@ def fetch_flare_events(start_time, end_time):
     return flare_df
 
 def check_if_ar_flared(flare_df, noaa_numbers, timestamp):
+    
+    # Check if flare dataframe is empty which means no flare events were detected.
+    if flare_df.empty:
+        return False
+    
+    if noaa_numbers.size == 0:
+        print("NOAA numbers are missing cannot check if flare occured.")
+    
     for noaa in noaa_numbers:
         # Filter the dataframe to get flare events for the specific NOAA number
         flares_for_noaa = flare_df[flare_df['noaa_active_region'] == noaa]
@@ -165,7 +174,11 @@ def fetch_sharp_data(timestamp, harpnum=None):
     # Obtain NOAA number to check if active region has flared
     noaa_numbers = sharp_result[0]["NOAA_ARS"]
     noaa_string = noaa_numbers[0].item()
-    noaa_num_array = np.array(noaa_string.split(','), dtype='int')
+    
+    if noaa_string != 'MISSING':
+       noaa_num_array = np.array(noaa_string.split(','), dtype='int')
+    else:
+       noaa_num_array = np.array([]) 
 
     files = Fido.fetch(sharp_result)
     sharp_maps = map.Map(files)
@@ -238,6 +251,7 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, start_time, end_time,
     
     plt.tight_layout()
     plt.show()
+
 
 
 def main():
