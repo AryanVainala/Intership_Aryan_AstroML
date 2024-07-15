@@ -3,6 +3,41 @@ from sunpy.net import Fido, attrs as a
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
+def get_time_and_window():
+    """
+    Obtain and validate a single timestamp and a time window in minutes.
+    """
+    print("You can enter a date or timestamp in various formats such as:")
+    print("-----------------------------------------------------")
+    print("- YYYY-MM-DDThh:mm:ssZ")
+    print("- YYYY-MM-DD hh:mm:ss")
+    print("- YYYY-MM-DD")
+    print("- DD-MM-YYYY")
+    print("- MM/DD/YYYY")
+    print("- YYYY/MM/DD")
+    print("- DD Month YYYY")
+    print("- Month DD, YYYY")
+    print("-----------------------------------------------------")
+
+    while True:
+        try:
+            timestamp_str = str(input("Please enter time stamp: "))
+            timestamp = time_convert(timestamp_str)
+            break
+        except ValueError as e:
+            print(e)
+
+    while True:
+        try:
+            time_window_minutes = int(input("Enter a time window in minutes: "))
+            if time_window_minutes <= 0:
+                raise ValueError("The time window must be a positive integer.")
+            break
+        except ValueError:
+            print("Error: Please enter a valid integer.")
+
+    return timestamp, time_window_minutes
+
 def time_convert(timestamp_str):
     """
     Converts timestamp string into datetime objecct. Handles multiple
@@ -35,14 +70,13 @@ def get_time_window(timestamp, time_window_minutes):
     end_time = timestamp + delta
     return start_time, end_time
 
-def fetch_satellite_data(start_time, end_time):
+def fetch_goes_data(start_time, end_time):
     """
     Fetch GOES satellite data using the specified time range.
     """
     try:
         result = Fido.search(a.Time(start_time, end_time), a.Instrument("XRS"),
                             a.goes.SatelliteNumber(15), a.Resolution("flx1s"))
-        print(result)
         files = Fido.fetch(result)
         combined_ts = ts.TimeSeries(files, source='XRS', concatenate=True)
         return combined_ts
@@ -64,39 +98,11 @@ def plot_time_series(time_series, start_time, end_time, highlight_time):
 
 
 def main():
-    print("You can enter a date or timestamp in various formats such as:")
-    print("-----------------------------------------------------")
-    print("- YYYY-MM-DDThh:mm:ssZ")
-    print("- YYYY-MM-DD hh:mm:ss")
-    print("- YYYY-MM-DD")
-    print("- DD-MM-YYYY")
-    print("- MM/DD/YYYY")
-    print("- YYYY/MM/DD")
-    print("- DD Month YYYY")
-    print("- Month DD, YYYY")
-    print("-----------------------------------------------------")
-
-    while True:
-        try:
-            timestamp_str = str(input("Please enter time stamp: "))
-            timestamp = time_convert(timestamp_str)
-            break
-        except ValueError as e:
-            print(e)
-            
-    while True:
-        try:
-            time_window_minutes = int(input("Enter a time window in minutes: "))
-            if time_window_minutes <= 0:
-                raise ValueError("The time window must be a positive integer.")
-            break
-        except ValueError:
-            print("Error: Please enter a valid integer.")
-        
+    timestamp, time_window_minutes = get_time_and_window()
     try:
-        start_time, end_time = get_time_window(timestamp, time_window_minutes)
+        start_time, end_time = get_time_and_window(timestamp, time_window_minutes)
         print(f"Fetching data from {start_time} to {end_time}...")
-        goes_ts = fetch_satellite_data(start_time, end_time)
+        goes_ts = fetch_goes_data(start_time, end_time)
         print("Data fetched successfully. Plotting the data...")
         plot_time_series(goes_ts, start_time, end_time, timestamp)
         print("Plot displayed successfully.")
@@ -105,5 +111,5 @@ def main():
     except Exception:
         print("An error occurred while plotting the data.")
 
-
-main()
+if __name__ == "__main__":
+    main()
