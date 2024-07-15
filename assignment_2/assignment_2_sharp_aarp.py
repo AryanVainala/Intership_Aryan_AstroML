@@ -9,7 +9,7 @@ from sunkit_instruments import goes_xrs
 from sunpy.time import TimeRange
 import pandas as pd
 import sunpy.visualization.colormaps as cm
-from assignment_1_goes_time_series import get_time_window, fetch_goes_data, get_time_and_window
+from assignment_1_goes_time_series import get_start_and_end_time, fetch_goes_data, get_time_and_window
 
     
 def fetch_flare_events(start_time, end_time):
@@ -162,12 +162,10 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, start_time, end_time,
     
     # Plot GOES data in the 2x2 grid
     ax4 = fig.add_subplot(224)
-    goes_ts_trunc = goes_ts.truncate(start_time, end_time)
-    goes_ts_trunc.plot(axes=ax4)
+    goes_ts.plot(axes=ax4)
     ax4.axvline(highlight_time, color='steelblue', linewidth=1.5, label="t={}".format(highlight_time))
     ax4.legend()
     ax4.set_title("GOES X-Ray Flux")
-    
     plt.tight_layout()
     plt.show()
 
@@ -175,7 +173,7 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, start_time, end_time,
 
 def main():
     timestamp, time_window_minutes = get_time_and_window()
-    start_time, end_time = get_time_window(timestamp, time_window_minutes)
+    start_time, end_time = get_start_and_end_time(timestamp, time_window_minutes)
     flare_df = fetch_flare_events(start_time, end_time)
     available_harpnums = fetch_harpnums(timestamp)
     harpnum = select_harpnum(available_harpnums)

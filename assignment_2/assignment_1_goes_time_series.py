@@ -61,7 +61,7 @@ def time_convert(timestamp_str):
             pass
     raise ValueError("Invalid date/timestamp format. Please try again.")
 
-def get_time_window(timestamp, time_window_minutes):
+def get_start_and_end_time(timestamp, time_window_minutes):
     """
     Calculate the start and end times based on the given timestamp and time window.
     """
@@ -76,21 +76,22 @@ def fetch_goes_data(start_time, end_time):
     """
     try:
         result = Fido.search(a.Time(start_time, end_time), a.Instrument("XRS"),
-                            a.goes.SatelliteNumber(15), a.Resolution("flx1s"))
+                             a.Resolution("flx1s"))
         files = Fido.fetch(result)
         combined_ts = ts.TimeSeries(files, source='XRS', concatenate=True)
-        return combined_ts
+        time_series_trunc = combined_ts.truncate(start_time, end_time)
+        return time_series_trunc
     except:
         raise RuntimeError("Failed to fetch Satellite data or data does not exist.")
 
-def plot_time_series(time_series, start_time, end_time, highlight_time):
+def plot_time_series(time_series, highlight_time):
     """
     Plot the time series data within the specified time range. Then highlight
     the timestamp.
     """
-    time_series_trunc = time_series.truncate(start_time, end_time)
+    
     fig, ax = plt.subplots()
-    time_series_trunc.plot(axes=ax)
+    time_series.plot(axes=ax)
     ax.axvline(highlight_time, color='steelblue', linewidth=1.5, label="t={}".format(highlight_time))
     ax.legend()
     ax.set_title("GOES X-Ray Flux")
@@ -100,16 +101,16 @@ def plot_time_series(time_series, start_time, end_time, highlight_time):
 def main():
     timestamp, time_window_minutes = get_time_and_window()
     try:
-        start_time, end_time = get_time_and_window(timestamp, time_window_minutes)
+        start_time, end_time = get_start_and_end_time(timestamp, time_window_minutes)
         print(f"Fetching data from {start_time} to {end_time}...")
         goes_ts = fetch_goes_data(start_time, end_time)
         print("Data fetched successfully. Plotting the data...")
-        plot_time_series(goes_ts, start_time, end_time, timestamp)
+        plot_time_series(goes_ts, timestamp)
         print("Plot displayed successfully.")
     except RuntimeError as fetch_error:
         print(fetch_error)
-    except Exception:
-        print("An error occurred while plotting the data.")
+    except Exception as e:
+        print(f"An error occurred while plotting the data: {e}")
 
 if __name__ == "__main__":
     main()
