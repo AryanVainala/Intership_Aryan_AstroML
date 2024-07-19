@@ -117,7 +117,7 @@ def fix_metadata(sharp_maps):
             sharp_maps.meta["bunit"] = r"Mx cm$^{-2}$"
     return sharp_maps
 
-def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, start_time, end_time, highlight_time, flared):
+def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, highlight_time, flared):
     fig = plt.figure(figsize=(15, 10))
     
     # Plot SHARP data with its WCS projection
@@ -128,7 +128,7 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, start_time, end_time,
     sharp_unit = sharp_map.meta.get('bunit', 'Unknown')
     sharp_x_unit = sharp_map.meta.get('cunit1', 'degree')
     sharp_y_unit = sharp_map.meta.get('cunit2', 'degree')
-    ax1.set_title(f"SHARP - {harpnum} at {sharp_time} | AR flared - {flared}")
+    ax1.set_title(f"SHARP - {harpnum} at {sharp_time.iso} | AR flared - {flared}")
     ax1.set_xlabel(f"CEA Longitude ({sharp_x_unit})")
     ax1.set_ylabel(f"CEA Latitude ({sharp_y_unit})")
     plt.colorbar(im1, ax=ax1, label=sharp_unit)
@@ -190,11 +190,11 @@ def main():
         print("GOES data fetched successfully. Plotting the data...")
 
         aarp_filepaths = [
-            r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\assignment_2\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_171.fits",
-            r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\assignment_2\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_304.fits"
+            r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_171.fits",
+            r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_304.fits"
         ]
 
-        plot_combined_data(sharp_maps, aarp_filepaths, goes_ts, start_time, end_time, timestamp, ar_flared)
+        plot_combined_data(sharp_maps, aarp_filepaths, goes_ts, timestamp, ar_flared)
         print("Plot displayed successfully.")
     except RuntimeError as fetch_error:
         print(fetch_error)

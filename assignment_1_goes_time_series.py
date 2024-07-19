@@ -2,6 +2,7 @@ import sunpy.timeseries as ts
 from sunpy.net import Fido, attrs as a
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+import numpy as np
 
 def get_time_and_window():
     """
@@ -77,7 +78,11 @@ def fetch_goes_data(start_time, end_time):
     try:
         result = Fido.search(a.Time(start_time, end_time), a.Instrument("XRS"),
                              a.Resolution("flx1s"))
-        files = Fido.fetch(result)
+        
+        # Select data from the latest satellite
+        responses = result['xrs']
+        satellite_filter_index = int(np.argmax(responses["SatelliteNumber"]))
+        files = Fido.fetch(result[0,satellite_filter_index:])
         combined_ts = ts.TimeSeries(files, source='XRS', concatenate=True)
         time_series_trunc = combined_ts.truncate(start_time, end_time)
         return time_series_trunc
