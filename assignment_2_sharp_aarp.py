@@ -8,7 +8,6 @@ import numpy as np
 from sunkit_instruments import goes_xrs
 from sunpy.time import TimeRange
 import pandas as pd
-import sunpy.visualization.colormaps as cm
 from assignment_1_goes_time_series import get_start_and_end_time, fetch_goes_data, get_time_and_window
 
     
