@@ -8,7 +8,7 @@ def get_time_and_window():
     """
     Obtain and validate a single timestamp and a time window in minutes.
     """
-    print("You can enter a date or timestamp in various formats such as:")
+    print("You can enter a date or timestamp in various formats such as :")
     print("-----------------------------------------------------")
     print("- YYYY-MM-DDThh:mm:ssZ")
     print("- YYYY-MM-DD hh:mm:ss")
