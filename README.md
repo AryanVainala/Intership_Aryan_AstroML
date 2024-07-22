@@ -50,14 +50,26 @@ The project extensively uses the Fido search functionality from the Sunpy module
 - **GOES:** Time series data of solar X-ray flux from the Geostationary Operational Environmental Satellite (GOES), used for monitoring solar flare activity.
 
 ### Examples
+#### Plotting the GOES time series
+In order to plot the goes time series open `solar_main.py` in the project directory. Then set the `sharp` and `aarp` to False. 
+
+```bash
+from solar_plotter import SolarPlotter
+
+if __name__ == "__main__":
+    plotter = SolarPlotter(sharp=False, aarp=False)
+    plotter.plot_data()
+```
+You will then be prompted to input a timestamp from the various given formats and a time window in minutes. In this example the timestamp chosen was `2011-05-28 15:48:00` and the time window was 30 minutes.
+
+After this the time series should display like this
+![plot][./example_plots/goes_plot]
+
 
 ## References
-1.
-<a id="1">[1]</a>
+1. <a id="1">[1]</a>
 K. Dissauer, K. D. Leka, and E. L. Wagner, “Properties of Flare-imminent versus Flare-quiet Active Regions from the Chromosphere through the Corona. I. Introduction of the AIA Active Region Patches (AARPs),” Astrophysical Journal/the Astrophysical Journal, vol. 942, no. 2, p. 83, Jan. 2023, doi: 10.3847/1538-4357/ac9c06.
-2.
-<a id="2">[2]</a>
-K. Dissauer, K. D. Leka, and E. L. Wagner, “Properties of Flare-imminent versus Flare-quiet Active Regions from the Chromosphere through the Corona. I. Introduction of the AIA Active Region Patches (AARPs),” Astrophysical Journal/the Astrophysical Journal, vol. 942, no. 2, p. 83, Jan. 2023, doi: 10.3847/1538-4357/ac9c06.
-3.
-<a id="3">[3]</a>
+2. <a id="2">[2]</a>
+K. Dissauer, K. D. Leka, and E. L. Wagner, “Properties of Flare-imminent versus Flare-quiet Active Regions from the Chromosphere through the Corona. I. Introduction of the AIA Active Region Patches (AARPs),” Astrophysical Journal/the Astrophysical Journal, vol. 942, no. 2, p. 83, Jan. 2023, doi: 10.3847/1538-4357/ac9c06.
+3. <a id="3">[3]</a>
 “GOES X-Ray Flux | NOAA / NWS Space Weather Prediction Center.” https://www.swpc.noaa.gov/products/goes-x-ray-flux

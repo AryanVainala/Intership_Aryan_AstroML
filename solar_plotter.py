@@ -24,8 +24,8 @@ class SolarPlotter:
         
         if self.aarp:
             aarp_filepaths = [
-                r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_171.fits",
-                r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_304.fits"
+                r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\aarp_fits_files\2011.05.28_15 48 00_7h@1h_AARP625_171.fits",
+                r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\aarp_fits_files\2011.05.28_15 48 00_7h@1h_AARP625_304.fits"
             ]
 
         if self.sharp and self.aarp:
