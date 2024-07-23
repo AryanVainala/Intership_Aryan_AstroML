@@ -64,7 +64,7 @@ The project extensively uses the Fido search functionality from the Sunpy module
 
 ### Examples
 #### Plotting the GOES time series
-In order to plot the goes time series open [solar_main.py](solar_main.py) in the project directory. Then set the `sharp` and `aarp` to `False`. 
+In order to plot the goes time series open [solar_main.py](solar_main.py) in the project directory. Then set `sharp` and `aarp` to `False`. 
 
 ```bash
 from solar_plotter import SolarPlotter
