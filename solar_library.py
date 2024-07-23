@@ -70,7 +70,7 @@ def get_start_and_end_time(timestamp, time_window_minutes):
 
 def fetch_goes_data(start_time, end_time):
     try:
-        print(f"Fetching data from {start_time} to {end_time}...")
+        print(f"Fetching GOES XRS timeseries from {start_time} to {end_time}...")
         result = Fido.search(a.Time(start_time, end_time), a.Instrument("XRS"), a.Resolution("flx1s"))
         responses = result['xrs']
         satellite_filter_index = int(np.argmax(responses["SatelliteNumber"]))
@@ -177,9 +177,10 @@ def fix_metadata(sharp_maps):
 
 def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, highlight_time, flared):
     fig = plt.figure(figsize=(15, 10))
-    
+    svmin = np.percentile(sharp_map, 1)
+    svmax = np.percentile(sharp_map, 99.5)
     ax1 = fig.add_subplot(221, projection=sharp_map)
-    im1 = ax1.imshow(sharp_map.data, cmap='afmhot', origin='lower')
+    im1 = ax1.imshow(sharp_map.data, cmap='hmimag', origin='lower', vmin=svmin, vmax=svmax)
     harpnum = sharp_map.meta.get('HARPNUM')
     sharp_time = sharp_map.date
     sharp_unit = sharp_map.meta.get('bunit', 'Unknown')
