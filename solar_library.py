@@ -177,10 +177,9 @@ def fix_metadata(sharp_maps):
 
 def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, highlight_time, flared):
     fig = plt.figure(figsize=(15, 10))
-    svmin = np.percentile(sharp_map, 1)
-    svmax = np.percentile(sharp_map, 99.5)
+    
     ax1 = fig.add_subplot(221, projection=sharp_map)
-    im1 = ax1.imshow(sharp_map.data, cmap='hmimag', origin='lower', vmin=svmin, vmax=svmax)
+    im1 = ax1.imshow(sharp_map.data, cmap='hmimag', origin='lower')
     harpnum = sharp_map.meta.get('HARPNUM')
     sharp_time = sharp_map.date
     sharp_unit = sharp_map.meta.get('bunit', 'Unknown')
