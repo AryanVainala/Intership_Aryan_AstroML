@@ -5,4 +5,4 @@
 !solar_library.py
 !solar_plotter.py
 !.gitignore
-!plots/
+!/plots*
