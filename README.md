@@ -1,5 +1,16 @@
 #  SHARP, AARP, and GOES Data Visualiser for Solar Analysis
 
+#### Table of Contents
+1. [Description](#description)
+2. [Intallation](#installation)
+3. [Usage](#usage)
+   - [Codeflow](#codeflow)
+   - [Data Sources](#data-sources)
+   - [Examples](#examples)
+      - [Plotting GOES timeseries](#plotting-the-goes-time-series)
+      - [Plotting SHARP magnetogram, AARP images and GOES timeseries](#plotting-sharp-magnetogram-aarp-images-and-goes-timeseries)
+4. [References](#references)
+
 ## Description
 
 The goal of this project is to help visualise solar data products created using observations by the SDO (Solar Dynamics Observatory) and the GOES (Geostationary Operational Environmental Satellite) satellites.
@@ -7,7 +18,7 @@ The data products are SHARP (Solar Active Region Patches), AARP (AIA Active Regi
 
 ## Installation
 
-1. ### Clone the repository:
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/AryanVainala/Intership_Aryan_AstroML.git
    ```
@@ -27,6 +38,7 @@ python .\solar_main.py
 ```
 in your terminal or IDE.
 
+### Codeflow
 The steps involved in the code are as follows:
 ```mermaid
 flowchart TD
@@ -42,16 +54,17 @@ A([Start])-->B[Get time stamp and time window]-->C[Fetch available HARPNUM for S
 8. **Check if Active Region Flared:** Determine if the active region experienced a flare during the specified time window.
 9. **Plot SHARP, AARP images, and GOES time series:** Generate plots of SHARP and AARP images along with the GOES time series data for visual analysis.
 
-The project extensively uses the Fido search functionality from the Sunpy module for acquiring solar data. More details can be found here[!https://docs.sunpy.org/en/stable/tutorial/acquiring_data/index.html#searching-for-data].
+The project extensively uses the Fido search functionality from the Sunpy module for acquiring solar data. More details can be found [here](https://docs.sunpy.org/en/stable/tutorial/acquiring_data/index.html#searching-for-data).
 
 ### Data Sources
-- **AARP:** Multi-wavelength FITS files from the Atmospheric Imaging Assembly (AIA) on the Solar Dynamics Observatory (SDO). [[1]](#1)
-- **SHARP:** HMI Active Region Patches from the Helioseismic and Magnetic Imager (HMI) on the SDO, providing vector magnetic field maps.[[2]](#2)
-- **GOES:** Time series data of solar X-ray flux from the Geostationary Operational Environmental Satellite (GOES), used for monitoring solar flare activity.[[3]](#3)
+- **AARP:** Multi-wavelength FITS files from the Atmospheric Imaging Assembly (AIA) on the Solar Dynamics Observatory (SDO). [[1]](#reference-1)
+- **SHARP:** HMI Active Region Patches from the Helioseismic and Magnetic Imager (HMI) on the SDO, providing vector magnetic field maps. [[2]](#reference-2)
+- **GOES:** Time series data of solar X-ray flux from the Geostationary Operational Environmental Satellite (GOES), used for monitoring solar flare activity. [[3]](#refere“GOES X-Ray Flux | NOAA / NWS Space Weather Prediction Center.” https://www.swpc.noaa.gov/products/goes-x-ray-flux
+</a>nce-3)
 
 ### Examples
 #### Plotting the GOES time series
-In order to plot the goes time series open [solar_main.py](solar_main.py) in the project directory. Then set the `sharp` and `aarp` to `False`. 
+In order to plot the goes time series open [solar_main.py](solar_main.py) in the project directory. Then set `sharp` and `aarp` to `False`. 
 
 ```bash
 from solar_plotter import SolarPlotter
@@ -74,10 +87,17 @@ In our example we use the same timestamp as above and the SHARP and AARP data ar
 <p align="center">
 <img src="https://github.com/user-attachments/assets/b2f38db6-e0b2-4d67-b42f-096067ff6ecc" width=75% height=75%>
 </p>
+
+---
+
 ## References
-1. <a id="1">[1]</a>
-K. Dissauer, K. D. Leka, and E. L. Wagner, “Properties of Flare-imminent versus Flare-quiet Active Regions from the Chromosphere through the Corona. I. Introduction of the AIA Active Region Patches (AARPs),” Astrophysical Journal/the Astrophysical Journal, vol. 942, no. 2, p. 83, Jan. 2023, doi: 10.3847/1538-4357/ac9c06.
-2. <a id="2">[2]</a>
+<a id="reference-1">[1]
 K. Dissauer, K. D. Leka, and E. L. Wagner, “Properties of Flare-imminent versus Flare-quiet Active Regions from the Chromosphere through the Corona. I. Introduction of the AIA Active Region Patches (AARPs),” Astrophysical Journal/the Astrophysical Journal, vol. 942, no. 2, p. 83, Jan. 2023, doi: 10.3847/1538-4357/ac9c06.
-3. <a id="3">[3]</a>
+</a>
+
+<a id="reference-2">[2] K. Dissauer, K. D. Leka, and E. L. Wagner, “Properties of Flare-imminent versus Flare-quiet Active Regions from the Chromosphere through the Corona. I. Introduction of the AIA Active Region Patches (AARPs),” Astrophysical Journal/the Astrophysical Journal, vol. 942, no. 2, p. 83, Jan. 2023, doi: 10.3847/1538-4357/ac9c06.
+</a>
+
+<a id="reference-3">[3]
 “GOES X-Ray Flux | NOAA / NWS Space Weather Prediction Center.” https://www.swpc.noaa.gov/products/goes-x-ray-flux
+</a>
