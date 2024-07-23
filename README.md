@@ -51,7 +51,7 @@ The project extensively uses the Fido search functionality from the Sunpy module
 
 ### Examples
 #### Plotting the GOES time series
-In order to plot the goes time series open `solar_main.py` in the project directory. Then set the `sharp` and `aarp` to False. 
+In order to plot the goes time series open solar_main.py in the project directory. Then set the `sharp` and `aarp` to `False`. 
 
 ```bash
 from solar_plotter import SolarPlotter
@@ -62,9 +62,14 @@ if __name__ == "__main__":
 ```
 You will then be prompted to input a timestamp from the various given formats and a time window in minutes. In this example the timestamp chosen was `2011-05-28 15:48:00` and the time window was 30 minutes.
 
-After this the time series should display like this
-![plot][./example_plots/goes_plot]
+After this the time series should display like this:
 
+#### Plotting SHARP magnetogram, AARP images and GOES timeseries
+In order to plot all data products open solar_main.py in the project directory. This time set `sharp` and `aarp` to `True`.
+
+You will be prompted to enter a timestamp and a time window, the GOES time series for the selected time range will be downloaded. Next, active regions in the given time range will be retrieved and you will be required to enter the HARPNUM. Then you will have to enter an email which you must register[!http://jsoc.stanford.edu/ajax/register_email.html] with JSOC in order to download the data. Please note the project cannot download AARP files so they must be dowloaded manually from here[!https://umbra.nascom.nasa.gov/contributed/AIA_AARPS/] and put into the aarp_fits_file folder.
+
+In our example we use the same timestamp as above and the SHARP and AARP data are for HAPRNUM 625. Here is the plot:
 
 ## References
 1. <a id="1">[1]</a>
