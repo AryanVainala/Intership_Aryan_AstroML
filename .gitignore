@@ -1,5 +1,8 @@
 *
-!assignment_1_goes_time_series.py
-!assignment_2_sharp_aarp.py
+!solar_main.py
 !README.md
 !requirements.txt
+!solar_library.py
+!solar_plotter.py
+!.gitignore
+!plots/*

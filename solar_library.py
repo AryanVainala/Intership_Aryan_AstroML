@@ -1,24 +1,101 @@
-import sunpy.map as map
+import sunpy.timeseries as ts
 from sunpy.net import Fido, attrs as a
+from datetime import datetime, timedelta
 import matplotlib, matplotlib.pyplot as plt
+import numpy as np
+import sunpy.map as map
 import astropy.units as u
 from astropy.io import fits
 from astropy.wcs import WCS
-import numpy as np
 from sunkit_instruments import goes_xrs
 from sunpy.time import TimeRange
 import pandas as pd
-from assignment_1_goes_time_series import get_start_and_end_time, fetch_goes_data, get_time_and_window
 
-    
+def get_time_and_window():
+    print("You can enter a date or timestamp in various formats such as:")
+    print("-----------------------------------------------------")
+    print("- YYYY-MM-DDThh:mm:ssZ")
+    print("- YYYY-MM-DD hh:mm:ss")
+    print("- YYYY-MM-DD")
+    print("- DD-MM-YYYY")
+    print("- MM/DD/YYYY")
+    print("- YYYY/MM/DD")
+    print("- DD Month YYYY")
+    print("- Month DD, YYYY")
+    print("-----------------------------------------------------")
+
+    while True:
+        try:
+            timestamp_str = str(input("Please enter time stamp: "))
+            timestamp = time_convert(timestamp_str)
+            break
+        except ValueError as e:
+            print(e)
+
+    while True:
+        try:
+            time_window_minutes = int(input("Enter a time window in minutes: "))
+            if time_window_minutes <= 0:
+                raise ValueError("The time window must be a positive integer.")
+            break
+        except ValueError:
+            print("Error: Please enter a valid integer.")
+
+    return timestamp, time_window_minutes
+
+def time_convert(timestamp_str):
+    formats = [
+        "%Y-%m-%dT%H:%M:%SZ",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d",
+        "%d-%m-%Y",
+        "%m/%d/%Y",
+        "%Y/%m/%d",
+        "%d %B %Y",
+        "%B %d, %Y",
+    ]
+
+    for fmt in formats:
+        try:
+            return datetime.strptime(timestamp_str, fmt)
+        except:
+            pass
+    raise ValueError("Invalid date/timestamp format. Please try again.")
+
+def get_start_and_end_time(timestamp, time_window_minutes):
+    delta = timedelta(minutes=time_window_minutes)
+    start_time = timestamp - delta
+    end_time = timestamp + delta
+    return start_time, end_time
+
+def fetch_goes_data(start_time, end_time):
+    try:
+        print(f"Fetching data from {start_time} to {end_time}...")
+        result = Fido.search(a.Time(start_time, end_time), a.Instrument("XRS"), a.Resolution("flx1s"))
+        responses = result['xrs']
+        satellite_filter_index = int(np.argmax(responses["SatelliteNumber"]))
+        files = Fido.fetch(result[0,satellite_filter_index:])
+        combined_ts = ts.TimeSeries(files, source='XRS', concatenate=True)
+        time_series_trunc = combined_ts.truncate(start_time, end_time)
+        print("GOES data fetched successfully...")
+        return time_series_trunc
+    except:
+        raise RuntimeError("Failed to fetch Satellite data or data does not exist.")
+
+def plot_time_series(time_series, highlight_time):
+    fig, ax = plt.subplots()
+    time_series.plot(axes=ax)
+    ax.axvline(highlight_time, color='steelblue', linewidth=1.5, label="t={}".format(highlight_time))
+    ax.legend()
+    ax.set_title("GOES X-Ray Flux")
+    plt.show()
+
 def fetch_flare_events(start_time, end_time):
     flare_events = goes_xrs.get_goes_event_list(TimeRange(start_time, end_time))
     flare_df = pd.DataFrame(flare_events)
     return flare_df
 
 def check_if_ar_flared(flare_df, noaa_numbers, timestamp):
-    
-    # Check if flare dataframe is empty which means no flare events were detected.
     if flare_df.empty:
         return False
     
@@ -26,22 +103,15 @@ def check_if_ar_flared(flare_df, noaa_numbers, timestamp):
         print("NOAA numbers are missing cannot check if flare occured.")
     
     for noaa in noaa_numbers:
-        # Filter the dataframe to get flare events for the specific NOAA number
         flares_for_noaa = flare_df[flare_df['noaa_active_region'] == noaa]
-        # Iterate over the filtered DataFrame
         for _, flare in flares_for_noaa.iterrows():
             start_time = flare['start_time']
             end_time = flare['end_time']
-            # Check if the timestamp is within the start and end time of the flare
             if start_time <= timestamp <= end_time:
                 return True
     return False
 
-
 def fetch_harpnums(timestamp):
-    """
-    Fetch available HARPNUMs for the given timestamp.
-    """
     print(f"Fetching available HARPNUMs for {timestamp}...")
     search_result = Fido.search(a.Time(timestamp, timestamp),
                                 a.jsoc.Series("hmi.sharp_720s"))
@@ -50,9 +120,6 @@ def fetch_harpnums(timestamp):
     return sorted(harpnums)
 
 def select_harpnum(available_harpnums):
-    """
-    Prompt the user for a valid HARPNUM from the available options.
-    """
     while True:
         harpnum = input("Enter HARPNUM from available options (or press Enter to fetch data for all active regions): ").strip()
         if harpnum == "":
@@ -67,14 +134,11 @@ def select_harpnum(available_harpnums):
             print(f"Invalid input. Please enter a valid HARPNUM from the available options: {available_harpnums}")
 
 def fetch_aarp_data(filepath):
-    # Temporary manual download of AARP data
     return None
 
 def fetch_sharp_data(timestamp, harpnum=None):
-    """
-    Fetch SHARP data from JSOC.
-    """
     jsoc_email = str(input("Please enter an email registered with JSOC: "))
+    print(f"Fetching SHARP data for {timestamp}...")
     if harpnum:
         sharp_result = Fido.search(a.Time(timestamp, timestamp),
                                    a.Sample(1*u.hour),
@@ -89,24 +153,19 @@ def fetch_sharp_data(timestamp, harpnum=None):
                                    a.jsoc.Notify(jsoc_email),
                                    a.jsoc.Segment('magnetogram'))
     
-    # Obtain NOAA number to check if active region has flared
     noaa_numbers = sharp_result[0]["NOAA_ARS"]
     noaa_string = noaa_numbers[0].item()
     
-    if noaa_string != 'MISSING':
-       noaa_num_array = np.array(noaa_string.split(','), dtype='int')
+    if (noaa_string != 'MISSING') and (noaa_string is not None):
+        noaa_num_array = np.array(noaa_string.split(','), dtype='int')
     else:
-       noaa_num_array = np.array([]) 
+        noaa_num_array = np.array([])
 
     files = Fido.fetch(sharp_result)
     sharp_maps = map.Map(files)
     return sharp_maps, noaa_num_array
 
-
 def fix_metadata(sharp_maps):
-    """
-    Fix metadata issues for SHARP maps. ###WIP###
-    """
     if isinstance(sharp_maps, list):
         for smap in sharp_maps:
             if "bunit" in smap.meta and smap.meta["bunit"] == "Mx/cm^2":
@@ -119,7 +178,6 @@ def fix_metadata(sharp_maps):
 def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, highlight_time, flared):
     fig = plt.figure(figsize=(15, 10))
     
-    # Plot SHARP data with its WCS projection
     ax1 = fig.add_subplot(221, projection=sharp_map)
     im1 = ax1.imshow(sharp_map.data, cmap='afmhot', origin='lower')
     harpnum = sharp_map.meta.get('HARPNUM')
@@ -132,7 +190,6 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, highlight_time, flare
     ax1.set_ylabel(f"CEA Latitude ({sharp_y_unit})")
     plt.colorbar(im1, ax=ax1, label=sharp_unit)
     
-    # Plot AARP data with adjusted vmin and vmax
     for i, filepath in enumerate(aarp_filepaths):
         with fits.open(filepath) as hdul:
             ext = hdul[1]
@@ -142,24 +199,21 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, highlight_time, flare
             aarp_colormap = matplotlib.colormaps[f'sdoaia{aarp_wavelength}']
             data = ext.data[5, :, :]
 
-            # Extract WCS information from the header
             wcs = WCS(ext.header, naxis=2)
             ax = fig.add_subplot(2, 2, i+2, projection=wcs)
             
-            # Calculate vmin and vmax for better dynamic range
             vmin = np.percentile(data, 1)
             vmax = np.percentile(data, 99.5)
 
             im = ax.imshow(data, cmap=aarp_colormap, origin='lower', aspect='auto', vmin=vmin, vmax=vmax)
             aarp_x_unit = ext.header.get('CUNIT1', 'Unknown')
             aarp_y_unit = ext.header.get('CUNIT2', 'Unknown')
-            unit = ext.header.get('BUNIT', 'Intensity')  # Get unit for colorbar from header if available
+            unit = ext.header.get('BUNIT', 'Intensity')
             ax.coords[0].set_axislabel(f'Solar X ({aarp_x_unit})')
             ax.coords[1].set_axislabel(f'Solar Y ({aarp_y_unit})')
             ax.set_title(f'AARP - {aarp_wavelength} Å at {specific_time}')
             plt.colorbar(im, ax=ax, label=unit)
     
-    # Plot GOES data in the 2x2 grid
     ax4 = fig.add_subplot(224)
     goes_ts.plot(axes=ax4)
     ax4.axvline(highlight_time, color='steelblue', linewidth=1.5, label="t={}".format(highlight_time))
@@ -167,38 +221,3 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, highlight_time, flare
     ax4.set_title("GOES X-Ray Flux")
     plt.tight_layout()
     plt.show()
-
-
-
-def main():
-    timestamp, time_window_minutes = get_time_and_window()
-    start_time, end_time = get_start_and_end_time(timestamp, time_window_minutes)
-    flare_df = fetch_flare_events(start_time, end_time)
-    available_harpnums = fetch_harpnums(timestamp)
-    harpnum = select_harpnum(available_harpnums)
-
-    try:
-        print(f"Fetching SHARP data for {timestamp}...")
-        sharp_maps, noaa_numbers = fetch_sharp_data(timestamp, harpnum)
-        ar_flared = check_if_ar_flared(flare_df, noaa_numbers, timestamp)
-        sharp_maps = fix_metadata(sharp_maps)
-        print("SHARP data fetched successfully. Plotting the data...")
-
-        print(f"Fetching GOES data from {start_time} to {end_time}...")
-        goes_ts = fetch_goes_data(start_time, end_time)
-        print("GOES data fetched successfully. Plotting the data...")
-
-        aarp_filepaths = [
-            r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_171.fits",
-            r"C:\Users\vaina\OneDrive\Documents\Kerala Internship\AARP fits files\2011.05.28_15 48 00_7h@1h_AARP625_304.fits"
-        ]
-
-        plot_combined_data(sharp_maps, aarp_filepaths, goes_ts, timestamp, ar_flared)
-        print("Plot displayed successfully.")
-    except RuntimeError as fetch_error:
-        print(fetch_error)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-if __name__ == "__main__":
-    main()
