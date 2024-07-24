@@ -9,6 +9,7 @@ from astropy.io import fits
 from astropy.wcs import WCS
 from sunkit_instruments import goes_xrs
 from sunpy.time import TimeRange
+import sys
 import pandas as pd
 
 def get_time_and_window():
@@ -116,7 +117,12 @@ def fetch_harpnums(timestamp):
     search_result = Fido.search(a.Time(timestamp, timestamp),
                                 a.jsoc.Series("hmi.sharp_720s"))
     harpnums = {record["HARPNUM"] for record in search_result[0]}
-    print("Available HARPNUMs:", sorted(harpnums))
+    if harpnums:
+        print("Available HARPNUMs:", sorted(harpnums))
+    else:
+        print("No HARPNUM found exiting program")
+        sys.exit()
+
     return sorted(harpnums)
 
 def select_harpnum(available_harpnums):
@@ -177,9 +183,8 @@ def fix_metadata(sharp_maps):
 
 def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, highlight_time, flared):
     fig = plt.figure(figsize=(15, 10))
-    
     ax1 = fig.add_subplot(221, projection=sharp_map)
-    im1 = ax1.imshow(sharp_map.data, cmap='hmimag', origin='lower')
+    im1 = ax1.imshow(sharp_map.data, cmap='hmimag', origin='lower', vmin=-1500.0, vmax=+1500.0)
     harpnum = sharp_map.meta.get('HARPNUM')
     sharp_time = sharp_map.date
     sharp_unit = sharp_map.meta.get('bunit', 'Unknown')
@@ -202,10 +207,10 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, highlight_time, flare
             wcs = WCS(ext.header, naxis=2)
             ax = fig.add_subplot(2, 2, i+2, projection=wcs)
             
-            vmin = np.percentile(data, 1)
-            vmax = np.percentile(data, 99.5)
+            vmin_aarp = np.percentile(data, 1)
+            vmax_aarp = np.percentile(data, 99.5)
 
-            im = ax.imshow(data, cmap=aarp_colormap, origin='lower', aspect='auto', vmin=vmin, vmax=vmax)
+            im = ax.imshow(data, cmap=aarp_colormap, origin='lower', aspect='auto', vmin=vmin_aarp, vmax=vmax_aarp)
             aarp_x_unit = ext.header.get('CUNIT1', 'Unknown')
             aarp_y_unit = ext.header.get('CUNIT2', 'Unknown')
             unit = ext.header.get('BUNIT', 'Intensity')
