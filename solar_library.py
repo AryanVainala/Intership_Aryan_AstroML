@@ -11,6 +11,8 @@ from sunkit_instruments import goes_xrs
 from sunpy.time import TimeRange
 import sys
 import pandas as pd
+import os
+from sunpy.util.config import get_and_create_download_dir
 
 def get_time_and_window():
     print("You can enter a date or timestamp in various formats such as:")
@@ -127,9 +129,7 @@ def fetch_harpnums(timestamp):
 
 def select_harpnum(available_harpnums):
     while True:
-        harpnum = input("Enter HARPNUM from available options (or press Enter to fetch data for all active regions): ").strip()
-        if harpnum == "":
-            return None
+        harpnum = input("Enter a HARPNUM from available options: ").strip()
         try:
             harpnum = int(harpnum)
             if harpnum in available_harpnums:
@@ -145,19 +145,13 @@ def fetch_aarp_data(filepath):
 def fetch_sharp_data(timestamp, harpnum=None):
     jsoc_email = str(input("Please enter an email registered with JSOC: "))
     print(f"Fetching SHARP data for {timestamp}...")
-    if harpnum:
-        sharp_result = Fido.search(a.Time(timestamp, timestamp),
-                                   a.Sample(1*u.hour),
-                                   a.jsoc.Series("hmi.sharp_cea_720s"),
-                                   a.jsoc.PrimeKey("HARPNUM", harpnum),
-                                   a.jsoc.Notify(jsoc_email),
-                                   a.jsoc.Segment('magnetogram'))
-    else:
-        sharp_result = Fido.search(a.Time(timestamp, timestamp),
-                                   a.Sample(1*u.hour),
-                                   a.jsoc.Series("hmi.sharp_cea_720s"),
-                                   a.jsoc.Notify(jsoc_email),
-                                   a.jsoc.Segment('magnetogram'))
+    sharp_result = Fido.search(a.Time(timestamp, timestamp),
+                               a.jsoc.Series("hmi.sharp_cea_720s"),
+                               a.jsoc.PrimeKey("HARPNUM", harpnum),
+                               a.jsoc.Notify(jsoc_email),
+                               a.jsoc.Segment('magnetogram'))
+    
+    data_dir = get_and_create_download_dir()
     
     noaa_numbers = sharp_result[0]["NOAA_ARS"]
     noaa_string = noaa_numbers[0].item()
@@ -167,7 +161,7 @@ def fetch_sharp_data(timestamp, harpnum=None):
     else:
         noaa_num_array = np.array([])
 
-    files = Fido.fetch(sharp_result)
+    files = Fido.fetch(sharp_result, path=os.path.join(data_dir, "{file}"), overwrite=False)
     sharp_maps = map.Map(files)
     return sharp_maps, noaa_num_array
 
