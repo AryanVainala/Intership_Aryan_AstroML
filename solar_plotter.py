@@ -1,5 +1,5 @@
-from solar_library import (fetch_goes_data, fetch_sharp_data, plot_combined_data, get_time_and_window,
-                            get_start_and_end_time, fetch_harpnums, select_harpnum, fix_metadata, plot_time_series, 
+from solar_library import (fetch_goes_data, fetch_sharp_data, plot_combined_data, plot_animation,get_time_and_window,
+                            get_start_and_end_time, fix_metadata, plot_time_series, 
                             fetch_flare_events, check_if_ar_flared)
 
 class SolarPlotter:
@@ -14,9 +14,7 @@ class SolarPlotter:
         goes_ts = fetch_goes_data(start_time, end_time)
         
         if self.sharp:
-            available_harpnums = fetch_harpnums(timestamp)
-            harpnum = select_harpnum(available_harpnums)
-            sharp_maps, noaa_numbers = fetch_sharp_data(timestamp, harpnum)
+            sharp_maps, noaa_numbers = fetch_sharp_data(timestamp, timestamp)
             sharp_maps = fix_metadata(sharp_maps)
             
             flare_df = fetch_flare_events(start_time, end_time)
@@ -34,3 +32,10 @@ class SolarPlotter:
             plot_combined_data(sharp_maps, [], goes_ts, timestamp, ar_flared)
         else:
             plot_time_series(goes_ts, timestamp)
+        
+    def plot_animation(self):
+        timestamp, time_window_minutes = get_time_and_window()
+        start_time, end_time = get_start_and_end_time(timestamp, time_window_minutes)
+        sharp_maps, noaa_numbers = fetch_sharp_data(start_time, end_time)
+        sharp_maps = fix_metadata(sharp_maps)
+        plot_animation(sharp_maps)

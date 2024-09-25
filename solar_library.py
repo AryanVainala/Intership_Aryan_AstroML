@@ -114,9 +114,9 @@ def check_if_ar_flared(flare_df, noaa_numbers, timestamp):
                 return True
     return False
 
-def fetch_harpnums(timestamp):
-    print(f"Fetching available HARPNUMs for {timestamp}...")
-    search_result = Fido.search(a.Time(timestamp, timestamp),
+def fetch_harpnums(start_time, end_time):
+    print(f"Fetching HARPNUM for {start_time} to {end_time}...")
+    search_result = Fido.search(a.Time(start_time, end_time),
                                 a.jsoc.Series("hmi.sharp_720s"))
     harpnums = {record["HARPNUM"] for record in search_result[0]}
     if harpnums:
@@ -142,37 +142,50 @@ def select_harpnum(available_harpnums):
 def fetch_aarp_data(filepath):
     return None
 
-def fetch_sharp_data(timestamp, harpnum=None):
-    jsoc_email = str(input("Please enter an email registered with JSOC: "))
-    print(f"Fetching SHARP data for {timestamp}...")
-    sharp_result = Fido.search(a.Time(timestamp, timestamp),
-                               a.jsoc.Series("hmi.sharp_cea_720s"),
-                               a.jsoc.PrimeKey("HARPNUM", harpnum),
-                               a.jsoc.Notify(jsoc_email),
-                               a.jsoc.Segment('magnetogram'))
-    
+def fetch_sharp_data(start_time, end_time):
     data_dir = get_and_create_download_dir()
+    selected_harpnum = select_harpnum(fetch_harpnums(start_time, end_time))
+        
+    while True:
+        jsoc_email = input("Please enter an email registered with JSOC: ")
+        try:
+            sharp_result = Fido.search(
+                a.Time(start_time, end_time),
+                a.jsoc.Series("hmi.sharp_cea_720s"),
+                a.jsoc.Notify(jsoc_email),
+                a.jsoc.Segment('magnetogram'),
+                a.jsoc.PrimeKey('HARPNUM', selected_harpnum)
+            )
+            
+            files = Fido.fetch(sharp_result, path=os.path.join(data_dir, "{file}"), overwrite=False)
+            break
+        except ValueError as e:
+            print(f"Error: {e}")
+            print("Please enter a valid and registered email address.")
     
-    noaa_numbers = sharp_result[0]["NOAA_ARS"]
-    noaa_string = noaa_numbers[0].item()
+    if sharp_result.file_num > 1:
+        sharp_maps = map.Map(files, sequence=True)
+    else:
+        sharp_maps = map.Map(files)
+    #logic may need to change since each harpnum now has mutiple files, also might be best to pass the logic to another function as it doesn't really 'fit'
+    noaa_numbers = sharp_result[0,0]["NOAA_ARS"]
+    noaa_string = noaa_numbers.item()
     
     if (noaa_string != 'MISSING') and (noaa_string is not None):
         noaa_num_array = np.array(noaa_string.split(','), dtype='int')
     else:
         noaa_num_array = np.array([])
-
-    files = Fido.fetch(sharp_result, path=os.path.join(data_dir, "{file}"), overwrite=False)
-    sharp_maps = map.Map(files)
+        
     return sharp_maps, noaa_num_array
 
 def fix_metadata(sharp_maps):
-    if isinstance(sharp_maps, list):
+    if isinstance(sharp_maps, map.MapSequence):
         for smap in sharp_maps:
-            if "bunit" in smap.meta and smap.meta["bunit"] == "Mx/cm^2":
-                smap.meta["bunit"] = r"Mx cm$^{-2}$"
+            if "bunit" in smap.meta:
+                smap.meta["bunit"] = smap.meta["bunit"].replace("Mx/cm^2", "Mx / cm2")
     else:
-        if "bunit" in sharp_maps.meta and sharp_maps.meta["bunit"] == "Mx/cm^2":
-            sharp_maps.meta["bunit"] = r"Mx cm$^{-2}$"
+        if "bunit" in sharp_maps.meta:
+            sharp_maps.meta["bunit"] = sharp_maps.meta["bunit"].replace("Mx/cm^2", "Mx / cm2")
     return sharp_maps
 
 def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, highlight_time, flared):
@@ -220,3 +233,7 @@ def plot_combined_data(sharp_map, aarp_filepaths, goes_ts, highlight_time, flare
     ax4.set_title("GOES X-Ray Flux")
     plt.tight_layout()
     plt.show()
+    
+def plot_animation(sharp_maps):
+    sharp_maps.plot(cmap='hmimag')
+    
